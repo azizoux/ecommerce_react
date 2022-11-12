@@ -9,10 +9,8 @@ function Home() {
         Bienvenue au <span>Shop</span>
       </h1>
       <p>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Aperiam
-        assumenda rerum quam consequatur, vero non rem earum quasi labore,
-        quaerat, debitis quas cumque officiis vitae magni maiores eveniet
-        perspiciatis sequi.
+        Parcourez notre sélection de mug shop : vous y trouverez les meilleures
+        pièces uniques ou personnalisées de nos mugs boutiques.
       </p>
       <img src={imgHomeShop} alt="ImageShop" />
     </div>

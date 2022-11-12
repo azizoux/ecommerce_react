@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./redux/store";
@@ -9,19 +9,12 @@ import Contact from "./Pages/Contact/Contact";
 import ShoppingCart from "./Pages/ShopppingCart/ShoppingCart";
 import Navbar from "./Components/Navbar/Navbar";
 import FloatingCart from "./Components/FloatingCart/FloatingCart";
-import { API } from "./api/api-service";
+import { AppContextProvider } from "./Context/AppContext";
 
 function App() {
-  useEffect(() => {
-    async function fetchData() {
-      const data = await API.getMugs().catch((err) => console.log(err));
-      console.log(data);
-    }
-    fetchData();
-  }, []);
   return (
-    <div>
-      <Provider store={store}>
+    <Provider store={store}>
+      <AppContextProvider>
         <FloatingCart />
         <Navbar />
         <Routes>
@@ -31,8 +24,8 @@ function App() {
           <Route exact path="/shoppingCart" element={<ShoppingCart />} />
           <Route exact path="/contact" element={<Contact />} />
         </Routes>
-      </Provider>
-    </div>
+      </AppContextProvider>
+    </Provider>
   );
 }
 

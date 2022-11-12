@@ -1,17 +1,18 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import { useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import "./ProductShowCase.css";
-import inventory from "../../data/inventory";
+import { AppContext } from "../../Context/AppContext";
+import { API } from "../../api/api-service";
+import { useDispatch } from "react-redux";
 
 function ProductShowCase() {
   const [nbMugs, setNbMugs] = useState(1);
-  const { id } = useParams();
   const dispatch = useDispatch();
-  const productClickedIndex = inventory.findIndex(
+  const { mugs, carts, setCarts } = useContext(AppContext);
+  const { id } = useParams();
+  const productClickedIndex = mugs.findIndex(
     (obj) => obj.title.replace(/\s+/g, "").trim() === id
   );
-
   const addingInfo = useRef();
   let timerInfo;
   let display = true;
@@ -20,16 +21,56 @@ function ProductShowCase() {
     setNbMugs(Number(e.target.value));
   };
 
-  const addToCart = (e) => {
+  const addToCart = async (e) => {
     e.preventDefault();
-    const itemAdded = {
-      ...inventory[productClickedIndex],
+    const selectedProduct = mugs[productClickedIndex];
+    const newCart = {
+      mug: selectedProduct,
       quantity: nbMugs,
     };
-    dispatch({
-      type: "ADDITEM",
-      payload: itemAdded,
-    });
+
+    if (carts.length === 0) {
+      const createdCart = await API.createCart({
+        mug: selectedProduct,
+        quantity: nbMugs,
+        payed: false,
+      });
+
+      dispatch({
+        type: "ADDITEM",
+        payload: createdCart,
+      });
+    } else {
+      const newCarts = [...carts];
+      const productIndex = newCarts.findIndex(
+        (obj) => obj.mug.id === selectedProduct.id
+      );
+      if (productIndex === -1) {
+        newCarts.push(newCart);
+        setCarts(newCart);
+        const createdCart = await API.createCart({
+          mug: selectedProduct,
+          quantity: nbMugs,
+          payed: false,
+        });
+        dispatch({
+          type: "ADDITEM",
+          payload: createdCart,
+        });
+      } else {
+        const cart_to_update = await API.getCartByMugId(selectedProduct.id);
+        const result = await API.updateCart(cart_to_update.id, {
+          mug: selectedProduct,
+          quantity: cart_to_update.quantity + nbMugs,
+          payed: false,
+        });
+        dispatch({
+          type: "UPDATEITEM",
+          payload: result,
+        });
+      }
+    }
+
     addingInfo.current.innerText = "Ajouté au panier";
     if (display) {
       display = false;
@@ -52,17 +93,25 @@ function ProductShowCase() {
         <img
           className="img-showcase"
           src={
-            process.env.PUBLIC_URL +
-            `/images/${inventory[productClickedIndex].img}.png`
+            mugs[productClickedIndex] ? mugs[productClickedIndex].image : null
           }
           alt=""
         />
       </div>
       <div className="product-infos">
-        <h2>{inventory[productClickedIndex].title}</h2>
-        <p>Prix: {inventory[productClickedIndex].price}</p>
+        <h2>
+          {mugs[productClickedIndex] ? mugs[productClickedIndex].title : null}
+        </h2>
+        <p>
+          Prix:{" "}
+          {mugs[productClickedIndex] ? mugs[productClickedIndex].price : null}€
+        </p>
         <h3>Description: </h3>
-        <small>{inventory[productClickedIndex].description}</small>
+        <small>
+          {mugs[productClickedIndex]
+            ? mugs[productClickedIndex].description
+            : null}
+        </small>
         <form onSubmit={addToCart}>
           <label htmlFor="quantity">Quantité</label>
           <input

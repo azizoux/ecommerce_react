@@ -1,26 +1,43 @@
-import React, { useState, useEffect } from "react";
-import { useSelector, useDisatch, useDispatch } from "react-redux";
+import React from "react";
+import { useSelector, useDispatch } from "react-redux";
 import "./ShoppingCart.css";
 import deleteIcon from "./Delete.svg";
+import { API } from "../../api/api-service";
 
 function ShoppingCart() {
   const storeState = useSelector((state) => state);
   const dispatch = useDispatch();
 
-  const handleChange = (event, id) => {
-    const indexItem = storeState.cart.findIndex((obj) => obj.id === id);
-
-    const objUpdated = {
-      ...storeState.cart[indexItem],
-      quantity: Number(event.target.value),
-    };
-
+  const handlePayment = async () => {
+    const cart = storeState.cart;
+    console.log("storeState.cart.id", cart);
+    for (const item of cart) {
+      const result = await API.updateCart(item.id, {
+        ...item,
+        payed: true,
+      });
+    }
     dispatch({
-      type: "UPDATEITEM",
-      payload: objUpdated,
+      type: "PAYEITEM",
+      payload: "",
     });
   };
-  const deleteItem = (e, id) => {
+
+  const handleChange = async (event, item) => {
+    const result = await API.updateCart(item.id, {
+      mug: item.mug,
+      quantity: event.target.value,
+      payed: false,
+    });
+    console.log("result:", result);
+    dispatch({
+      type: "UPDATEITEM",
+      payload: result,
+    });
+  };
+  const deleteItem = async (e, id) => {
+    const itemDeleted = await API.deleteCart(id);
+    console.log("itemDeleted:", itemDeleted);
     const itemId = storeState.cart.findIndex((obj) => obj.id === id);
     dispatch({
       type: "DELETEITEM",
@@ -30,7 +47,7 @@ function ShoppingCart() {
   let totalPrice = 0;
   if (storeState.cart.length !== 0) {
     for (const item of storeState.cart) {
-      const itemPrice = item.price * item.quantity;
+      const itemPrice = item.mug.price * item.quantity;
       totalPrice += itemPrice;
     }
   }
@@ -40,13 +57,10 @@ function ShoppingCart() {
       <ul className="cart-list">
         {storeState.cart.map((item) => (
           <li key={item.id}>
-            <img
-              src={process.env.PUBLIC_URL + `/images/${item.img}.png`}
-              alt="Shopping Cart item"
-            />
+            <img src={item.mug.image} alt="Shopping Cart item" />
             <div className="bloc-cart-infos">
-              <h4>{item.title}</h4>
-              <p>Price: {item.price}</p>
+              <h4>{item.mug.title}</h4>
+              <p>Price: {item.mug.price * item.quantity}€</p>
             </div>
             <div className="bloc-input">
               <label htmlFor="quantityInput">Quantité</label>
@@ -54,7 +68,7 @@ function ShoppingCart() {
                 type="number"
                 id="quantityInput"
                 value={item.quantity}
-                onChange={(e) => handleChange(e, item.id)}
+                onChange={(e) => handleChange(e, item)}
               />
             </div>
             <div>
@@ -69,7 +83,9 @@ function ShoppingCart() {
         ))}
       </ul>
       <p className="total-price">Total : {`${totalPrice.toFixed(2)}€`}</p>
-      <button className="btn-cart">Procéder au paiement</button>
+      <button onClick={handlePayment} className="btn-cart">
+        Procéder au paiement
+      </button>
     </div>
   );
 }
